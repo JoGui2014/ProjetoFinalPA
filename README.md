@@ -2,6 +2,14 @@
 
 # XML Tag API Documentation
 
+## Preparatory steps
+
+Before utilizing the library one should make sure that inside the project settings the following maven libraries are present:
+
+org.jetbrains.kotlin:kotlin-reflect:1.9.23
+org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22
+org.junit.jupiter:junit-jupiter:5.9.2
+
 ## Overview
 
 This API provides a structured and efficient way to manipulate XML documents programmatically.
