@@ -17,9 +17,9 @@ class Test {
     fun attributeTesting() {
         val planoTag = Tag("plano")
         planoTag.attributes.setAttribute("ano", "2023")
-        planoTag.attributes.setAttribute("melhorquenoanopassado", "claroquenao")
-        assertEquals(setOf("ano", "melhorquenoanopassado"), planoTag.attributes.getAttributes())
-        planoTag.attributes.removeAttribute("melhorquenoanopassado")
+        planoTag.attributes.setAttribute("exemplo", "outroexemplo")
+        assertEquals(setOf("ano", "exemplo"), planoTag.attributes.getAttributes())
+        planoTag.attributes.removeAttribute("exemplo")
         assertEquals(setOf("ano"), planoTag.attributes.getAttributes())
         planoTag.attributes.setAttribute("ano", "2024")
         assertEquals("2024", planoTag.attributes.getValues("ano"))
@@ -201,7 +201,7 @@ class Test {
         @XMLTag("FUC")
         class FUC(
             @XMLTag("avaliacao")
-            @NestedTags
+            @NestedTags("avaliacao")
             val avaliacao: List<ComponenteAvaliacao>
         )
 
@@ -250,7 +250,7 @@ class Test {
             @XMLTag("ects")
             val ects: Double,
             @XMLTag("avaliacao")
-            @NestedTags
+            @NestedTags("avaliacao")
             val avaliacao: List<ComponenteAvaliacao>
         )
 
@@ -279,7 +279,7 @@ class Test {
         @XMLTag("FUC")
         class FUC(
             @XMLTag("FUC")
-            @AttributesAnnotation("codigo")
+            @AttributesAnnotation("FUC")
             val codigo: String,
             @XMLTag("nome")
             @AttributesAnnotation("nome")
@@ -322,16 +322,16 @@ class Test {
         @XMLTag("FUC")
         class FUC(
             @XMLTag("FUC")
-            @AttributesAnnotation("codigo")
+            @AttributesAnnotation("FUC")
             val codigo: String,
             @XMLTag("nome")
-            @Text
+            @Text("nome")
             val nome: String,
             @XMLTag("ects")
-            @Text
+            @Text("ects")
             val ects: Double,
             @XMLTag("avaliacao")
-            @NestedTags
+            @NestedTags("avaliacao")
             val avaliacao: List<ComponenteAvaliacao>
         )
 
@@ -402,7 +402,7 @@ class Test {
             @XMLString(AddPercentage::class)
             val ects: Double,
             @XMLTag("avaliacao")
-            @NestedTags
+            @NestedTags("avaliacao")
             @XMLAdapter(FUCAdapter::class)
             val avaliacao: List<ComponenteAvaliacao>
         )

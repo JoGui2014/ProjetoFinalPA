@@ -16,23 +16,27 @@ annotation class RootTag
 
 /**
  * Annotation to define nested tags.
+ *
+ * @property associatedTag The name of the associated tag.
  */
 @Target(AnnotationTarget.PROPERTY)
-annotation class NestedTags
+annotation class NestedTags(val associatedTag: String)
 
 /**
  * Annotation to define XML attributes.
  *
- * @property attributeName The name of the XML attribute.
+ * @property associatedTag The name of the associated tag.
  */
 @Target(AnnotationTarget.PROPERTY)
-annotation class AttributesAnnotation(val attributeName: String)
+annotation class AttributesAnnotation(val associatedTag: String)
 
 /**
  * Annotation to define text content.
+ *
+ * @property associatedTag The name of the associated tag.
  */
 @Target(AnnotationTarget.PROPERTY)
-annotation class Text
+annotation class Text(val associatedTag: String)
 
 /**
  * Class representing an XML tag with attributes and nested tags.
@@ -109,6 +113,11 @@ class Tag(
     val getParent: Tag?
         get() = parent
 
+    /**
+     * Sets the parent tag for the current tag and its children.
+     *
+     * @param newParent The new parent tag.
+     */
     private fun setParent(newParent: Tag) {
         children.forEach {
             it.parent = newParent
@@ -123,6 +132,7 @@ class Tag(
      * Sets the text content.
      *
      * @param text The text content.
+     * @throws IllegalStateException If there are child elements present.
      */
     fun setText(text: String) {
         if (this.getChildren.isEmpty())
@@ -134,16 +144,26 @@ class Tag(
     val getChildren: List<Tag>
         get() = children
 
+    /**
+     * Removes a child tag.
+     *
+     * @param tagToRemove The child tag to remove.
+     */
     private fun removeChild(tagToRemove: Tag) {
         this.children.remove(tagToRemove)
     }
 
+    /**
+     * Adds a child tag.
+     *
+     * @param tagToAdd The child tag to add.
+     */
     private fun setChild(tagToAdd: Tag) {
         this.children.add(tagToAdd)
     }
 
     /**
-     * Removes the tag.
+     * Removes the tag. Making sure that whatever children it has get their parent set to the deleted tags parent.
      */
     fun removeTag() {
         if (this.getParent != null) {
@@ -173,6 +193,13 @@ class Tag(
         this.children.add(childTag)
     }
 
+    /**
+     * Finds tags recursively by their name.
+     *
+     * @param name The name of the tags to find.
+     * @param result The list to store found tags.
+     * @return The list of found tags.
+     */
     private fun findTagsRecursively(name: String, result: MutableList<Tag> = mutableListOf()): List<Tag> {
         children.forEach {
             if (it.getTag == name) {
