@@ -149,9 +149,7 @@ class Translator(private val genericObject: Any) {
         // Creation of the new tag
         val newTag = Tag(listProperty.findAnnotation<XMLTag>()!!.tagName, rootTag)
         // Creation of attributes
-        this.findAttributes(
-            newTag
-        )
+        this.findAttributes(newTag)
         // Creation of text or creation of children
         val willHaveNestedTags = this.createWithText(newTag, listProperty)
         if (willHaveNestedTags)
