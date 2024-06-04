@@ -843,23 +843,27 @@ annotation class RootTag
 
 /**
  * Annotation to define nested tags.
+ *
+ * @property associatedTag The name of the associated tag.
  */
 @Target(AnnotationTarget.PROPERTY)
-annotation class NestedTags
+annotation class NestedTags(val associatedTag: String)
 
 /**
  * Annotation to define XML attributes.
  *
- * @property attributeName The name of the XML attribute.
+ * @property associatedTag The name of the associated tag.
  */
-@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
-annotation class AttributesAnnotation(val attributeName: String)
+@Target(AnnotationTarget.PROPERTY)
+annotation class AttributesAnnotation(val associatedTag: String)
 
 /**
  * Annotation to define text content.
+ *
+ * @property associatedTag The name of the associated tag.
  */
 @Target(AnnotationTarget.PROPERTY)
-annotation class Text
+annotation class Text(val associatedTag: String)
 
 /**
  * Class representing an XML tag with attributes and nested tags.
@@ -936,6 +940,11 @@ class Tag(
     val getParent: Tag?
         get() = parent
 
+    /**
+     * Sets the parent tag for the current tag and its children.
+     *
+     * @param newParent The new parent tag.
+     */
     private fun setParent(newParent: Tag) {
         children.forEach {
             it.parent = newParent
@@ -950,6 +959,7 @@ class Tag(
      * Sets the text content.
      *
      * @param text The text content.
+     * @throws IllegalStateException If there are child elements present.
      */
     fun setText(text: String) {
         if (this.getChildren.isEmpty())
@@ -961,16 +971,26 @@ class Tag(
     val getChildren: List<Tag>
         get() = children
 
+    /**
+     * Removes a child tag.
+     *
+     * @param tagToRemove The child tag to remove.
+     */
     private fun removeChild(tagToRemove: Tag) {
         this.children.remove(tagToRemove)
     }
 
+    /**
+     * Adds a child tag.
+     *
+     * @param tagToAdd The child tag to add.
+     */
     private fun setChild(tagToAdd: Tag) {
         this.children.add(tagToAdd)
     }
 
     /**
-     * Removes the tag.
+     * Removes the tag. Making sure that whatever children it has get their parent set to the deleted tags parent.
      */
     fun removeTag() {
         if (this.getParent != null) {
@@ -1000,6 +1020,13 @@ class Tag(
         this.children.add(childTag)
     }
 
+    /**
+     * Finds tags recursively by their name.
+     *
+     * @param name The name of the tags to find.
+     * @param result The list to store found tags.
+     * @return The list of found tags.
+     */
     private fun findTagsRecursively(name: String, result: MutableList<Tag> = mutableListOf()): List<Tag> {
         children.forEach {
             if (it.getTag == name) {
@@ -1021,6 +1048,7 @@ class Tag(
         return findTagsRecursively(name)
     }
 }
+
 
 
 package iscteFinest
@@ -1166,6 +1194,14 @@ class Translator(private val genericObject: Any) {
         return createParentElement(genericObject)
     }
 
+    /**
+     * Creates the parent XML element for the given object.
+     *
+     * @param genericClass The object for which the XML element is created.
+     * @param fatherTag The parent tag, if any.
+     * @return The created parent XML tag.
+     * @throws IllegalStateException If no root tag is found or if the tag is empty.
+     */
     private fun createParentElement(genericClass: Any, fatherTag: Tag? = null): Tag {
         val tagClass = genericClass::class
         val rootTag = if (fatherTag == null)
@@ -1185,12 +1221,18 @@ class Translator(private val genericObject: Any) {
                 throw IllegalStateException("No rootTag with XMLTag annotation found")
         else
             Tag(tagClass.findAnnotation<XMLTag>()!!.tagName, fatherTag)
-        genericClass.findAttributes(rootTag, rootTag.getTag)
+        genericClass.findAttributes(rootTag)
         if (rootTag.getTag.isBlank()) throw IllegalStateException("No Tag should be empty")
         createChildrenTags(rootTag, genericClass)
         return rootTag
     }
 
+    /**
+     * Creates child tags for the given root tag and object.
+     *
+     * @param rootTag The parent tag.
+     * @param genericClass The object for which the child tags are created.
+     */
     private fun createChildrenTags(rootTag: Tag, genericClass: Any) {
         val tagClass = genericClass::class
         tagClass.declaredMemberProperties
@@ -1204,21 +1246,23 @@ class Translator(private val genericObject: Any) {
             }
     }
 
+    /**
+     * Creates steps for the creation of child elements for a given property and root tag.
+     *
+     * @param listProperty The property for which the child elements are created.
+     * @param rootTag The parent tag.
+     */
     private fun Any.childrenCreationSteps(listProperty: KProperty<*>, rootTag: Tag) {
         if (listProperty.findAnnotation<XMLTag>()!!.tagName.isBlank())
             throw IllegalArgumentException("Tag name in XMLTag annotation cannot be empty or blank")
         // Creation of the new tag
         val newTag = Tag(listProperty.findAnnotation<XMLTag>()!!.tagName, rootTag)
         // Creation of attributes
-        if (listProperty.hasAnnotation<AttributesAnnotation>())
-            this.findAttributes(
-                newTag,
-                listProperty.findAnnotation<XMLTag>()!!.tagName
-            )
+        this.findAttributes(newTag)
         // Creation of text or creation of children
-        if (listProperty.hasAnnotation<Text>()) this.createWithText(newTag, listProperty)
-        else if (listProperty.hasAnnotation<NestedTags>())
-            createNestedTags(newTag, listProperty.getter.call(this) as List<*>)
+        val willHaveNestedTags = this.createWithText(newTag, listProperty)
+        if (willHaveNestedTags)
+            this.createNestedTags(newTag)
         // Application of a preprocessing effect such as adaptation
         listProperty.findAnnotation<XMLAdapter>()?.let {
             val transformer = it.transformer.constructors.first().call()
@@ -1230,31 +1274,37 @@ class Translator(private val genericObject: Any) {
      * Creates nested tags for a given parent tag.
      *
      * @param fatherTag The parent tag.
-     * @param listOfTags The list of nested tags to create.
      */
-    private fun createNestedTags(fatherTag: Tag, listOfTags: List<*>) {
-        listOfTags.forEach { nestedTag ->
-            if (nestedTag != null) {
-                createParentElement(nestedTag, fatherTag)
-            }
+    private fun Any.createNestedTags(fatherTag: Tag) {
+        val tagClass = this::class
+        tagClass.declaredMemberProperties.filter {
+            it.hasAnnotation<NestedTags>()
+                    && it.findAnnotation<NestedTags>()!!.associatedTag == fatherTag.getTag
+                    && it.getter.call(this) is List<*>
         }
+            .forEach {
+                (it.getter.call(this) as List<*>).forEach { nestedTag ->
+                    if (nestedTag != null) {
+                        createParentElement(nestedTag, fatherTag)
+                    }
+                }
+            }
     }
 
     /**
      * Finds and sets attributes for a given tag.
      *
      * @param tagWithAttributes The tag to set attributes for.
-     * @param xmlTag The XML tag name.
      */
-    private fun Any.findAttributes(tagWithAttributes: Tag, xmlTag: String) {
+    private fun Any.findAttributes(tagWithAttributes: Tag) {
         val tagClass = this::class
-        tagClass.declaredMemberProperties.filter { it.hasAnnotation<AttributesAnnotation>() }
+        tagClass.declaredMemberProperties.filter {
+            !it.hasAnnotation<XMLTag>()
+                    || (it.hasAnnotation<AttributesAnnotation>()
+                    && it.findAnnotation<AttributesAnnotation>()!!.associatedTag == tagWithAttributes.getTag)
+        }
             .forEach {
-                if (!it.hasAnnotation<XMLTag>()
-                    || it.findAnnotation<XMLTag>()!!.tagName == xmlTag
-                ) {
-                    this.createWithAttributes(tagWithAttributes, it)
-                }
+                this.createWithAttributes(tagWithAttributes, it)
             }
     }
 
@@ -1271,7 +1321,7 @@ class Translator(private val genericObject: Any) {
             transformer.transform(attributeValue)
         } ?: attributeValue
         tagWithAttributes.attributes.setAttribute(
-            property.findAnnotation<AttributesAnnotation>()!!.attributeName,
+            property.name,
             transformedValue
         )
     }
@@ -1281,12 +1331,17 @@ class Translator(private val genericObject: Any) {
      *
      * @param tagWithText The tag to set text for.
      * @param property The property containing text data.
+     * @return `true` if nested tags will be created, `false` otherwise.
      */
-    private fun Any.createWithText(tagWithText: Tag, property: KProperty<*>) {
-        if (property.hasAnnotation<Text>())
-            tagWithText.setText(property.getter.call(this).toString())
+    private fun Any.createWithText(tagWithText: Tag, property: KProperty<*>): Boolean {
+        this::class.declaredMemberProperties
+            .filter { it.hasAnnotation<Text>() && it.findAnnotation<Text>()?.associatedTag == tagWithText.getTag }
+            .forEach {
+                tagWithText.setText(property.getter.call(this).toString())
+                return false
+            }
+        return true
     }
 }
-
 ```
 
