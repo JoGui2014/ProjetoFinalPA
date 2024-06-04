@@ -78,23 +78,92 @@ In our library, we use annotations to specify how Kotlin classes should be mappe
 
 The `@XmlTag` annotation is used to specify the XML tag name for a class. The variable tagName is what is used to set the final tags name. Property or class names take no effect
 
+###### EXAMPLE
+
+        (...)
+        @XMLTag("avaliacao")
+        val variable: Unit
+        (...)
+
+        
+        result:
+        (...)
+        <avaliacao/>
+        (...)
+
 ##### '@RootTag'
 
 Signals that the XmlTag annotation associated is meant to be the root of the document. This tag must exist at least once in whatever generic class that is created.
+
+###### EXAMPLE
+
+        @XMLTag("avaliacao")
+        @RootTag
+        class Taggable(...){
+        ...
+        }
+
+        result:
+        <Taggable>
+        (...)
+        </Taggable>
 
 ##### '@AttributesAnnotation' 
 
 This tag allows for the user to choose the name of the attribute and signals that the value held in the property will be the value associated to that tag's respective attribute name.
 The name of the attribute is set by the annotation's variable attributeName
 
+###### EXAMPLE
+
+        (...)
+        @XMLTag("avaliacao")
+        @Attirbute("avaliacao")
+        val name: String
+        (...)
+
+        result:
+        (...)
+        <avaliacao name = Daniel ></avaliacao>
+        (...)
+
 ##### '@Text'
 
 Shows that the value stored in the property below it contains the values to be used as the text of a given line
+
+###### EXAMPLE
+
+        (...)
+        @XMLTag("avaliacao")
+        @Text("avaliacao")
+        val variable: String
+        (...)
+
+        result:
+        (...)
+        <avaliacao> I hope it all goes well </avaliacao>
+        (...)
 
 ##### '@NestedTags'
 
 Placed above a variable that is a list of tags will make sure that children creation happens
 This should be used for children of children. Direct children of the root of the document should solely be created using the XmlTag Annotation
+
+###### EXAMPLE
+
+        (...)
+        @XMLTag("avaliacao")
+        @NestedTags("avaliacao")
+        val variable: List<*>
+        (...)
+
+        result:
+        (...)
+        <avaliacao>
+            < 
+            (...)
+            />
+        </avaliacao>
+        (...)
 
 ##### Translator class '@XMLString'
 
