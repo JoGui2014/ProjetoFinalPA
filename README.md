@@ -17,6 +17,7 @@ This API provides a structured and efficient way to manipulate XML documents pro
 It is designed to manage XML tags, attributes, and hierarchical structures. 
 The API consists of several key classes, including `Tag`, `Attributes`, `Document`, and `Translator`. 
 These classes allow for the creation, modification, and pretty-printing of XML documents.
+Tags should not be empty or contain spaces and there are checks to ensure the sanctity of the tags' names.
 
 ## Tutorials
 
@@ -947,6 +948,7 @@ class Tag(
     private var text: String? = null
 ) {
     init {
+        tagName = tagName.replace(" ", "")
         if (tagName.isBlank()) {
             throw IllegalArgumentException("Tag name cannot be empty or blank")
         }
@@ -1275,21 +1277,25 @@ class Translator(private val genericObject: Any) {
         val tagClass = genericClass::class
         val rootTag = if (fatherTag == null)
             if (tagClass.hasAnnotation<XMLTag>())
-                if (tagClass.hasAnnotation<RootTag>())
-                    Tag(tagClass.findAnnotation<XMLTag>()!!.tagName)
-                else {
+                if (tagClass.hasAnnotation<RootTag>()) {
+                    val tagName = tagClass.findAnnotation<XMLTag>()!!.tagName.replace(" ", "")
+                    Tag(tagName)
+                }else {
                     val rootTagName = tagClass.declaredMemberProperties
                         .find { it.hasAnnotation<RootTag>() && it.hasAnnotation<XMLTag>() }
                         ?.findAnnotation<XMLTag>()?.tagName
-                    if (rootTagName != null)
-                        Tag(rootTagName)
-                    else
+                    if (rootTagName != null) {
+                        val tagName = rootTagName.replace(" ", "")
+                        Tag(tagName)
+                    }else
                         throw IllegalStateException("No rootTag annotation found there must be at least one")
                 }
             else
                 throw IllegalStateException("No rootTag with XMLTag annotation found")
-        else
-            Tag(tagClass.findAnnotation<XMLTag>()!!.tagName, fatherTag)
+        else {
+            val tagName = tagClass.findAnnotation<XMLTag>()!!.tagName.replace(" ", "")
+            Tag(tagName, fatherTag)
+        }
         genericClass.findAttributes(rootTag)
         if (rootTag.getTag.isBlank()) throw IllegalStateException("No Tag should be empty")
         createChildrenTags(rootTag, genericClass)
@@ -1324,8 +1330,9 @@ class Translator(private val genericObject: Any) {
     private fun Any.childrenCreationSteps(listProperty: KProperty<*>, rootTag: Tag) {
         if (listProperty.findAnnotation<XMLTag>()!!.tagName.isBlank())
             throw IllegalArgumentException("Tag name in XMLTag annotation cannot be empty or blank")
+        val tagName = listProperty.findAnnotation<XMLTag>()!!.tagName.replace(" ", "")
         // Creation of the new tag
-        val newTag = Tag(listProperty.findAnnotation<XMLTag>()!!.tagName, rootTag)
+        val newTag = Tag(tagName, rootTag)
         // Creation of attributes
         this.findAttributes(newTag)
         // Creation of text or creation of children
