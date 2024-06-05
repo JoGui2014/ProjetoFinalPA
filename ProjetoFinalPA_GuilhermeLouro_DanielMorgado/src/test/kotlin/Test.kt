@@ -184,7 +184,7 @@ class Test {
     @Test
     fun createXmlStructureWithNestedTags() {
         val root = Tag("FUC")
-        val child1 = Tag("avaliacao", root)
+        val child1 = Tag("avaliacaoola", root)
         Tag("componente", child1)
         Tag("componente", child1)
         val doc = Document( root, 1.0, "UTF-8")
@@ -200,7 +200,7 @@ class Test {
         @RootTag
         @XMLTag("FUC")
         class FUC(
-            @XMLTag("avaliacao")
+            @XMLTag("avaliacao   ola")
             @NestedTags("avaliacao")
             val avaliacao: List<ComponenteAvaliacao>
         )

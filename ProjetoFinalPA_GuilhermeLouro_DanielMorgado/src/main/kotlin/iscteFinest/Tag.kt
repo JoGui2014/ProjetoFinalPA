@@ -51,6 +51,7 @@ class Tag(
     private var text: String? = null
 ) {
     init {
+        tagName = tagName.replace(" ", "")
         if (tagName.isBlank()) {
             throw IllegalArgumentException("Tag name cannot be empty or blank")
         }
