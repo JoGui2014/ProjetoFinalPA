@@ -51,6 +51,8 @@ class Tag(
     private var text: String? = null
 ) {
     init {
+        if(!isValidXmlElementName(tagName))
+            throw IllegalArgumentException("The tag name must only contain normal characters such as letters or underscores")
         tagName = tagName.replace(" ", "")
         if (tagName.isBlank()) {
             throw IllegalArgumentException("Tag name cannot be empty or blank")
@@ -82,6 +84,17 @@ class Tag(
             }
             init(this)
         }
+
+    /**
+     * Checks if the provided string is a valid XML tag name.
+     *
+     * @param input The string to check.
+     * @return True if the string is a valid XML element name, false otherwise.
+     */
+    fun isValidXmlElementName(input: String): Boolean {
+        val regex = "^[a-zA-Z_ ]+$".toRegex()
+        return regex.matches(input)
+    }
 
     /**
      * Accepts a visitor function to traverse the tag and its children.

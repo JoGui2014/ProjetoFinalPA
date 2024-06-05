@@ -64,6 +64,17 @@ class FUCAdapter : Adapter {
 class Translator(private val genericObject: Any) {
 
     /**
+     * Checks if the provided string is a valid XML tag name.
+     *
+     * @param input The string to check.
+     * @return True if the string is a valid XML element name, false otherwise.
+     */
+    fun isValidXmlElementName(input: String): Boolean {
+        val regex = "^[a-zA-Z_ ]+$".toRegex()
+        return regex.matches(input)
+    }
+
+    /**
      * Creates an XML document from the object.
      *
      * @return The created XML document.
@@ -99,6 +110,8 @@ class Translator(private val genericObject: Any) {
             if (tagClass.hasAnnotation<XMLTag>())
                 if (tagClass.hasAnnotation<RootTag>()) {
                     val tagName = tagClass.findAnnotation<XMLTag>()!!.tagName.replace(" ", "")
+                    if(!isValidXmlElementName(tagName))
+                        throw IllegalArgumentException("The tag name must only contain normal characters such as letters or underscores")
                     Tag(tagName)
                 }else {
                     val rootTagName = tagClass.declaredMemberProperties
@@ -106,6 +119,8 @@ class Translator(private val genericObject: Any) {
                         ?.findAnnotation<XMLTag>()?.tagName
                     if (rootTagName != null) {
                         val tagName = rootTagName.replace(" ", "")
+                        if(!isValidXmlElementName(tagName))
+                            throw IllegalArgumentException("The tag name must only contain normal characters such as letters or underscores")
                         Tag(tagName)
                     }else
                         throw IllegalStateException("No rootTag annotation found there must be at least one")
@@ -114,6 +129,8 @@ class Translator(private val genericObject: Any) {
                 throw IllegalStateException("No rootTag with XMLTag annotation found")
         else {
             val tagName = tagClass.findAnnotation<XMLTag>()!!.tagName.replace(" ", "")
+            if(!isValidXmlElementName(tagName))
+                throw IllegalArgumentException("The tag name must only contain normal characters such as letters or underscores")
             Tag(tagName, fatherTag)
         }
         genericClass.findAttributes(rootTag)
@@ -151,6 +168,8 @@ class Translator(private val genericObject: Any) {
         if (listProperty.findAnnotation<XMLTag>()!!.tagName.isBlank())
             throw IllegalArgumentException("Tag name in XMLTag annotation cannot be empty or blank")
         val tagName = listProperty.findAnnotation<XMLTag>()!!.tagName.replace(" ", "")
+        if(!isValidXmlElementName(tagName))
+            throw IllegalArgumentException("The tag name must only contain normal characters such as letters or underscores")
         // Creation of the new tag
         val newTag = Tag(tagName, rootTag)
         // Creation of attributes

@@ -18,9 +18,9 @@ class Test {
         val planoTag = Tag("plano")
         planoTag.attributes.setAttribute("ano", "2023")
         planoTag.attributes.setAttribute("exemplo", "outroexemplo")
-        assertEquals(setOf("ano", "exemplo"), planoTag.attributes.getAttributes())
+        assertEquals(setOf("ano", "exemplo"), planoTag.attributes.getAttribute())
         planoTag.attributes.removeAttribute("exemplo")
-        assertEquals(setOf("ano"), planoTag.attributes.getAttributes())
+        assertEquals(setOf("ano"), planoTag.attributes.getAttribute())
         planoTag.attributes.setAttribute("ano", "2024")
         assertEquals("2024", planoTag.attributes.getValues("ano"))
     }
@@ -81,8 +81,8 @@ class Test {
         myDoc.globalAttributeSetting("curso", "tipo", "diurno")
         val attributeMap = mutableMapOf<String, String>()
         attributeMap["tipo"] = "diurno"
-        assertEquals(attributeMap.keys, myDoc.getRootElement.getChildren[0].attributes.getAttributes())
-        assertEquals(attributeMap.keys, myDoc.getRootElement.getChildren[1].attributes.getAttributes())
+        assertEquals(attributeMap.keys, myDoc.getRootElement.getChildren[0].attributes.getAttribute())
+        assertEquals(attributeMap.keys, myDoc.getRootElement.getChildren[1].attributes.getAttribute())
 
     }
 
@@ -118,7 +118,7 @@ class Test {
         val myDoc = Document(planoTag, 1.0, "UTF-8")
         myDoc.globalAttributeSetting("curso", "tipo", "diurno")
         myDoc.globalAttributeRemoval("curso", "tipo")
-        assertEquals(emptySet<String>(), myDoc.getRootElement.getChildren[0].attributes.getAttributes())
+        assertEquals(emptySet<String>(), myDoc.getRootElement.getChildren[0].attributes.getAttribute())
     }
 
     @Test
@@ -132,15 +132,20 @@ class Test {
         Tag("ects", fucTag, "6.0")
         val avaliacaoTag = Tag("avaliacao", fucTag)
         val componenteTag1 = Tag("componente", avaliacaoTag)
-        componenteTag1.attributes.setAttribute("nome", "Quizzes")
+        componenteTag1.attributes.setAttribute("no     me", "Quizzes")
         componenteTag1.attributes.setAttribute("peso", "20%")
         val componenteTag2 = Tag("componente", avaliacaoTag)
         componenteTag2.attributes.setAttribute("nome", "Projeto")
         componenteTag2.attributes.setAttribute("peso", "80%")
         val myDoc = Document(planoTag, 1.0, "UTF-8")
+
+        val stringList: MutableList<String> = mutableListOf()
+        myDoc.microXpath("plano/fuc/avaliacao/componente").forEach {
+            stringList.add(myDoc.prettyPrintLine(it))
+        }
         assertEquals(
             listOf("""<componente nome="Quizzes" peso="20%"/>""", """<componente nome="Projeto" peso="80%"/>"""),
-            myDoc.microXpath("plano/fuc/avaliacao/componente")
+            stringList
         )
     }
 
@@ -454,11 +459,11 @@ class Test {
     @Test
     fun testFindTagsRecursively() {
         val root = Tag("rootTag").apply {
-            childTag("child1") {
+            childTag("firstchild") {
                 childTag("subchild") {}
                 childTag("subchild") {}
             }
-            childTag("child2") {
+            childTag("secondchild") {
                 childTag("subchild") {}
             }
         }

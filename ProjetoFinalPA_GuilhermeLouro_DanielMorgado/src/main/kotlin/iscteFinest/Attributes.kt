@@ -9,8 +9,21 @@ package iscteFinest
 
 class Attributes(private val attributes: MutableMap<String, String>) {
 
+    /**
+     * Checks if the provided string is a valid XML attribute name.
+     *
+     * @param input The string to check.
+     * @return True if the string is a valid XML element name, false otherwise.
+     */
+    fun isValidXmlAttributeName(input: String): Boolean {
+        val regex = "^[a-zA-Z_ ]+$".toRegex()
+        return regex.matches(input)
+    }
+
     init {
         attributes.forEach{
+            if(!isValidXmlAttributeName(it.key) )
+                throw IllegalArgumentException("Attribute names must be composed of regular characters such as letters or _ nothing else")
             if(it.key.isBlank() || it.value.isBlank())
                 throw IllegalArgumentException("Attribute names and/or values cannot be empty or blank")
         }
@@ -19,7 +32,7 @@ class Attributes(private val attributes: MutableMap<String, String>) {
     /**
      * Retrieves the set of attribute names.
      */
-    fun getAttributes(): Set<String> {
+    fun getAttribute(): Set<String> {
         return attributes.keys
     }
 
@@ -36,11 +49,19 @@ class Attributes(private val attributes: MutableMap<String, String>) {
     /**
      * Sets the value of the specified attribute.
      *
-     * @param attributeName The name of the attribute to set.
+     * @param attributename The name of the attribute to set.
      * @param attribute The value to set for the attribute.
      */
-    fun setAttribute(attributeName: String, attribute: String) {
-        attributes[attributeName] = attribute
+    fun setAttribute(attributename: String, attribute: String) {
+        var attributeName = attributename
+        var attributeValue = attribute
+        if(!isValidXmlAttributeName(attributeName))
+            throw IllegalArgumentException("Attribute names must be composed of regular characters such as letters or _ nothing else")
+        if(attributeName.isBlank() || attribute.isBlank())
+            throw IllegalArgumentException("Attribute names and/or values cannot be empty or blank")
+        attributeName = attributeName.replace(" ", "")
+        attributeValue = attributeValue.replace(" ", "")
+        attributes[attributeName] = attributeValue
     }
 
     /**

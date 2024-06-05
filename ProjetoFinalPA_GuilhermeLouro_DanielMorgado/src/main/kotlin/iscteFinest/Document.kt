@@ -13,6 +13,17 @@ data class Document(
 ) {
 
     /**
+     * Checks if the provided string is a valid micro XPath name
+     *
+     * @param input The string to check.
+     * @return True if the string is a valid XML element name, false otherwise.
+     */
+    fun isValidMicroXpathName(input: String): Boolean {
+        val regex = "^[a-zA-Z_/]+$".toRegex()
+        return regex.matches(input)
+    }
+
+    /**
      * Retrieves the root element of the document.
      */
     val getRootElement: Tag
@@ -62,7 +73,7 @@ data class Document(
      * @param tag The tag to pretty-print.
      * @return The pretty-printed tag line as a string.
      */
-    private fun prettyPrintLine(tag: Tag): String {
+    fun prettyPrintLine(tag: Tag): String {
         val fullString: String
         if (tag.getText.isNullOrEmpty()) {
             val startString = prettyAttributes(tag) + "/>"
@@ -84,8 +95,8 @@ data class Document(
      */
     private fun prettyAttributes(tag: Tag): String {
         var startname = "<" + tag.getTag
-        if(tag.attributes.getAttributes().isNotEmpty()) {
-            val attributes = tag.attributes.getAttributes()
+        if(tag.attributes.getAttribute().isNotEmpty()) {
+            val attributes = tag.attributes.getAttribute()
             attributes.forEach {
                 val attributeString = " $it" + """="${tag.attributes.getValues(it)}""""
                 startname += attributeString
@@ -180,21 +191,13 @@ data class Document(
      * @param xPath The micro XPath query to execute.
      * @return A list of strings representing the found elements.
      */
-    fun microXpath(xPath: String): List<String> {
-        val stringList: MutableList<String> = mutableListOf()
+    fun microXpath(xPath: String): List<Tag> {
         val tagList = mutableListOf<Tag>()
-        try {
-            if ("/" !in xPath) {
-                throw IllegalArgumentException("Invalid XPath string: $xPath. Must contain '/'")
-            }
-            tagList.addAll(findTagsInPath(xPath))
-        } catch (e: IllegalArgumentException) {
-            println(e.message)
+        if ("/" !in xPath || !isValidMicroXpathName(xPath)) {
+            throw IllegalArgumentException("Invalid XPath string: $xPath. Must contain '/' and only letters and the /")
         }
-        tagList.forEach {
-            stringList.add(this.prettyPrintLine(it))
-        }
-        return stringList
+        tagList.addAll(findTagsInPath(xPath))
+        return tagList
     }
 
     /**
